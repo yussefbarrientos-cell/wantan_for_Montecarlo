@@ -136,7 +136,12 @@
       flex-wrap: wrap;
     }
 
-    .char { border-bottom: 2px solid transparent; }
+    /* Fixed spacing bug by adding white-space: pre */
+    .char { 
+      border-bottom: 2px solid transparent; 
+      white-space: pre; 
+      display: inline-block;
+    }
     .char.correct { color: var(--accent-green); }
     .char.incorrect { color: var(--accent-red); background: rgba(239, 68, 68, 0.2); border-radius: 2px; }
     .char.current { border-bottom: 2px solid var(--accent); animation: blink 1s infinite; }
@@ -171,6 +176,7 @@
       font-size: 0.9rem;
       box-shadow: 0 3px 0 #1e293b;
       transition: all 0.1s;
+      cursor: pointer;
     }
 
     .key.active {
@@ -276,7 +282,7 @@
     </div>
     <!-- Row 3 -->
     <div class="keyboard-row">
-      <div class="key key-extra-wide" data-key="CapsLock">Caps</div>
+      <div class="key key-extra-wide" data-key="Caps">Caps</div>
       <div class="key" data-key="a">A</div><div class="key" data-key="s">S</div>
       <div class="key" data-key="d">D</div><div class="key" data-key="f">F</div>
       <div class="key" data-key="g">G</div><div class="key" data-key="h">H</div>
@@ -368,16 +374,15 @@
       progressBar.style.width = `${(currentIndex / sentences.length) * 100}%`;
     }
 
-    document.addEventListener("keydown", (e) => {
+    function handleInput(key) {
       if (currentIndex >= sentences.length) return;
-      
-      const key = e.key;
+
       const targetSentence = sentences[currentIndex].text;
       const expectedChar = targetSentence[charIndex];
 
-      highlightVirtualKey(e.key);
+      highlightVirtualKey(key);
 
-      if (key === "Backspace") {
+      if (key === "Backspace" || key === "Delete") {
         if (charIndex > 0) {
           const charSpans = displayEl.querySelectorAll(".char");
           charSpans[charIndex].classList.remove("current");
@@ -421,18 +426,43 @@
         updateStats();
         charSpans[charIndex].classList.add("incorrect");
       }
+    }
+
+    // Physical Keyboard Listener
+    document.addEventListener("keydown", (e) => {
+      if (e.key === " ") e.preventDefault(); // Prevent page scrolling on space
+      handleInput(e.key);
+    });
+
+    // Virtual On-Screen Keyboard Click Listener
+    document.querySelectorAll(".key").forEach(keyEl => {
+      keyEl.addEventListener("click", () => {
+        const keyValue = keyEl.getAttribute("data-key");
+        const targetSentence = sentences[currentIndex].text;
+        const expectedChar = targetSentence[charIndex];
+
+        // Smart casing for on-screen key clicks
+        if (expectedChar && keyValue.length === 1 && keyValue.toLowerCase() === expectedChar.toLowerCase()) {
+          handleInput(expectedChar);
+        } else {
+          handleInput(keyValue);
+        }
+      });
     });
 
     function highlightVirtualKey(key) {
-      let selector = `.key[data-key="${key}"]`;
-      if (key === " ") selector = `.key[data-key=" "]`;
-      if (key === "Backspace") selector = `.key[data-key="Backspace"]`;
+      let targetKey = key.toLowerCase();
+      if (key === " ") targetKey = " ";
+      if (key === "Backspace" || key === "Delete") targetKey = "Backspace";
 
-      const keyEl = document.querySelector(selector) || document.querySelector(`.key[data-key="${key.toLowerCase()}"]`);
-      if (keyEl) {
-        keyEl.classList.add("active");
-        setTimeout(() => keyEl.classList.remove("active"), 150);
-      }
+      const keys = document.querySelectorAll(".key");
+      keys.forEach(k => {
+        const dKey = k.getAttribute("data-key");
+        if (dKey && dKey.toLowerCase() === targetKey) {
+          k.classList.add("active");
+          setTimeout(() => k.classList.remove("active"), 150);
+        }
+      });
     }
 
     function updateStats() {
