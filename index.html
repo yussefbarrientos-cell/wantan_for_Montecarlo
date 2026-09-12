@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adjective Clause Speed Typer</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --accent-gold: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --key-bg: #334155;
+      --key-active: #0284c7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .stats-group { display: flex; gap: 20px; align-items: center; }
+    .stat-box { text-align: center; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-val { font-size: 1.4rem; font-weight: bold; color: var(--accent); }
+
+    .progress-container {
+      width: 100%;
+      max-width: 900px;
+      background: #334155;
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-green));
+      transition: width 0.3s ease;
+    }
+
+    .treats-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .treat-badge {
+      background: var(--card-bg);
+      border: 2px solid #334155;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .treat-badge.unlocked {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+    }
+
+    .main-card {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .grammar-tags {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .tag-type { background: #3b82f6; color: white; }
+    .tag-pronoun { background: #8b5cf6; color: white; }
+    .tag-tense { background: #059669; color: white; }
+
+    .sentence-display {
+      font-size: 1.35rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      letter-spacing: 0.5px;
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 10px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .char { border-bottom: 2px solid transparent; }
+    .char.correct { color: var(--accent-green); }
+    .char.incorrect { color: var(--accent-red); background: rgba(239, 68, 68, 0.2); border-radius: 2px; }
+    .char.current { border-bottom: 2px solid var(--accent); animation: blink 1s infinite; }
+
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    .keyboard-container {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      user-select: none;
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .key {
+      background: var(--key-bg);
+      color: var(--text-main);
+      padding: 12px 0;
+      width: 50px;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: 0 3px 0 #1e293b;
+      transition: all 0.1s;
+    }
+
+    .key.active {
+      background: var(--key-active);
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #1e293b;
+    }
+
+    .key-wide { width: 80px; }
+    .key-extra-wide { width: 110px; }
+    .key-space { width: 320px; }
+
+    .completion-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 100;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .completion-overlay h1 { font-size: 2.8rem; color: var(--accent-gold); margin-bottom: 15px; }
+    .completion-overlay p { font-size: 1.2rem; margin-bottom: 25px; color: var(--text-muted); }
+    .restart-btn {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .restart-btn:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h2 style="color: var(--accent);">Grammar Typer</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Adjective Clause Edition</span>
+    </div>
+    <div class="stats-group">
+      <div class="stat-box">
+        <div class="stat-label">Sentence</div>
+        <div class="stat-val" id="sentence-counter">1/20</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Streak</div>
+        <div class="stat-val" id="streak-counter">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">XP</div>
+        <div class="stat-val" id="xp-counter">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <div class="treats-bar">
+    <div class="treat-badge" id="treat-1"><span>🥉</span> Novice Syntactician</div>
+    <div class="treat-badge" id="treat-2"><span>🥈</span> Clause Navigator</div>
+    <div class="treat-badge" id="treat-3"><span>🥇</span> Comma Master</div>
+    <div class="treat-badge" id="treat-4"><span>🏆</span> Grammar Champion</div>
+  </div>
+
+  <div class="main-card">
+    <div class="grammar-tags" id="grammar-tags"></div>
+    <div class="sentence-display" id="sentence-display"></div>
+  </div>
+
+  <div class="keyboard-container" id="keyboard">
+    <!-- Row 1 -->
+    <div class="keyboard-row">
+      <div class="key" data-key="`">`</div>
+      <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div>
+      <div class="key" data-key="3">3</div><div class="key" data-key="4">4</div>
+      <div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
+      <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div>
+      <div class="key" data-key="9">9</div><div class="key" data-key="0">0</div>
+      <div class="key" data-key="-">-</div><div class="key" data-key="=">=</div>
+      <div class="key key-wide" data-key="Backspace">Delete</div>
+    </div>
+    <!-- Row 2 -->
+    <div class="keyboard-row">
+      <div class="key key-wide" data-key="Tab">Tab</div>
+      <div class="key" data-key="q">Q</div><div class="key" data-key="w">W</div>
+      <div class="key" data-key="e">E</div><div class="key" data-key="r">R</div>
+      <div class="key" data-key="t">T</div><div class="key" data-key="y">Y</div>
+      <div class="key" data-key="u">U</div><div class="key" data-key="i">I</div>
+      <div class="key" data-key="o">O</div><div class="key" data-key="p">P</div>
+      <div class="key" data-key="[">[</div><div class="key" data-key="]">]</div>
+      <div class="key" data-key="\">\</div>
+    </div>
+    <!-- Row 3 -->
+    <div class="keyboard-row">
+      <div class="key key-extra-wide" data-key="CapsLock">Caps</div>
+      <div class="key" data-key="a">A</div><div class="key" data-key="s">S</div>
+      <div class="key" data-key="d">D</div><div class="key" data-key="f">F</div>
+      <div class="key" data-key="g">G</div><div class="key" data-key="h">H</div>
+      <div class="key" data-key="j">J</div><div class="key" data-key="k">K</div>
+      <div class="key" data-key="l">L</div><div class="key" data-key=";">;</div>
+      <div class="key" data-key="'">'</div>
+      <div class="key key-extra-wide" data-key="Enter">Enter</div>
+    </div>
+    <!-- Row 4 -->
+    <div class="keyboard-row">
+      <div class="key key-extra-wide" data-key="Shift">Shift</div>
+      <div class="key" data-key="z">Z</div><div class="key" data-key="x">X</div>
+      <div class="key" data-key="c">C</div><div class="key" data-key="v">V</div>
+      <div class="key" data-key="b">B</div><div class="key" data-key="n">N</div>
+      <div class="key" data-key="m">M</div><div class="key" data-key=",">,</div>
+      <div class="key" data-key=".">.</div><div class="key" data-key="/">/</div>
+      <div class="key key-extra-wide" data-key="Shift">Shift</div>
+    </div>
+    <!-- Row 5 -->
+    <div class="keyboard-row">
+      <div class="key key-space" data-key=" ">Space</div>
+    </div>
+  </div>
+
+  <div class="completion-overlay" id="completion-modal">
+    <h1>🎉 Practice Complete! 🎉</h1>
+    <p>You mastered all 20 essential, non-essential, and formal adjective clause structures!</p>
+    <p id="final-stats" style="color: var(--accent); font-weight: bold;"></p>
+    <button class="restart-btn" onclick="restartApp()">Practice Again</button>
+  </div>
+
+  <script>
+    const sentences = [
+      { text: "The book that sits on the desk belongs to the professor.", type: "Essential", relative: "that", tense: "Present Simple + Present Simple" },
+      { text: "Paris, which had been on my travel list for years, amazed everyone.", type: "Non-Essential", relative: "which", tense: "Past Perfect + Past Simple" },
+      { text: "We visited the restaurant where my parents first met thirty years ago.", type: "Essential", relative: "where", tense: "Past Simple + Past Simple" },
+      { text: "Tokyo, where high-tech innovation thrives, will host the next summit.", type: "Non-Essential", relative: "where", tense: "Present Simple + Future Simple" },
+      { text: "I will never forget the day when we won the championship.", type: "Essential", relative: "when", tense: "Future Simple + Past Simple" },
+      { text: "July, when temperatures peak across the state, brings many tourists.", type: "Non-Essential", relative: "when", tense: "Present Simple + Present Simple" },
+      { text: "The ancient document in which the treaty was recorded is on display.", type: "Formal Essential", relative: "in which", tense: "Past Passive + Present Simple" },
+      { text: "The scientist for whom the award was created has published a study.", type: "Formal Essential", relative: "for whom", tense: "Past Passive + Present Perfect" },
+      { text: "The manager to whom you spoke yesterday has reviewed your resume.", type: "Formal Essential", relative: "to whom", tense: "Past Simple + Present Perfect" },
+      { text: "Dr. Vance, to whom we sent the samples, confirmed the results.", type: "Formal Non-Essential", relative: "to whom", tense: "Past Simple + Past Simple" },
+      { text: "The car that was parked outside had broken down before nightfall.", type: "Essential", relative: "that", tense: "Past Passive + Past Perfect" },
+      { text: "Her novel, which is being adapted into a movie, became a bestseller.", type: "Non-Essential", relative: "which", tense: "Present Cont. Passive + Past Simple" },
+      { text: "This is the library where I have spent countless hours studying.", type: "Essential", relative: "where", tense: "Present Simple + Present Perfect" },
+      { text: "The era in which they lived shaped their philosophical views.", type: "Formal Essential", relative: "in which", tense: "Past Simple + Past Simple" },
+      { text: "1969, when humans first stepped on the Moon, changed space exploration.", type: "Non-Essential", relative: "when", tense: "Past Simple + Past Simple" },
+      { text: "The children for whom the shelter was built are thriving today.", type: "Formal Essential", relative: "for whom", tense: "Past Passive + Present Continuous" },
+      { text: "All the candidates that are interviewing today must wait in the lobby.", type: "Essential", relative: "that", tense: "Present Continuous + Present Simple" },
+      { text: "My computer, which was bought last month, is already running slowly.", type: "Non-Essential", relative: "which", tense: "Past Passive + Present Continuous" },
+      { text: "He moved back to the town where he had grown up as a child.", type: "Essential", relative: "where", tense: "Past Simple + Past Perfect" },
+      { text: "The executive to whom the report was delivered will issue a statement.", type: "Formal Essential", relative: "to whom", tense: "Past Passive + Future Simple" }
+    ];
+
+    let currentIndex = 0;
+    let charIndex = 0;
+    let xp = 0;
+    let streak = 0;
+    let errorsInCurrentSentence = 0;
+
+    const displayEl = document.getElementById("sentence-display");
+    const tagsEl = document.getElementById("grammar-tags");
+    const xpEl = document.getElementById("xp-counter");
+    const streakEl = document.getElementById("streak-counter");
+    const counterEl = document.getElementById("sentence-counter");
+    const progressBar = document.getElementById("progress-bar");
+
+    function initSentence() {
+      const current = sentences[currentIndex];
+      displayEl.innerHTML = "";
+      tagsEl.innerHTML = `
+        <span class="tag tag-type">${current.type} Clause</span>
+        <span class="tag tag-pronoun">Relative: ${current.relative}</span>
+        <span class="tag tag-tense">Tenses: ${current.tense}</span>
+      `;
+
+      current.text.split("").forEach((char, idx) => {
+        const span = document.createElement("span");
+        span.classList.add("char");
+        if (idx === 0) span.classList.add("current");
+        span.textContent = char;
+        displayEl.appendChild(span);
+      });
+
+      charIndex = 0;
+      errorsInCurrentSentence = 0;
+      counterEl.textContent = `${currentIndex + 1}/${sentences.length}`;
+      progressBar.style.width = `${(currentIndex / sentences.length) * 100}%`;
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (currentIndex >= sentences.length) return;
+      
+      const key = e.key;
+      const targetSentence = sentences[currentIndex].text;
+      const expectedChar = targetSentence[charIndex];
+
+      highlightVirtualKey(e.key);
+
+      if (key === "Backspace") {
+        if (charIndex > 0) {
+          const charSpans = displayEl.querySelectorAll(".char");
+          charSpans[charIndex].classList.remove("current");
+          charIndex--;
+          charSpans[charIndex].className = "char current";
+        }
+        return;
+      }
+
+      if (key.length !== 1) return; // Ignore control keys
+
+      const charSpans = displayEl.querySelectorAll(".char");
+
+      if (key === expectedChar) {
+        charSpans[charIndex].className = "char correct";
+        charIndex++;
+
+        if (charIndex < targetSentence.length) {
+          charSpans[charIndex].classList.add("current");
+        } else {
+          // Sentence Finished
+          streak++;
+          let points = 50 + (streak * 10);
+          if (errorsInCurrentSentence === 0) points += 20; // Perfect bonus
+          xp += points;
+
+          updateStats();
+          checkTreatUnlocks();
+
+          currentIndex++;
+          if (currentIndex < sentences.length) {
+            setTimeout(initSentence, 200);
+          } else {
+            finishGame();
+          }
+        }
+      } else {
+        // Incorrect Key
+        errorsInCurrentSentence++;
+        streak = 0;
+        updateStats();
+        charSpans[charIndex].classList.add("incorrect");
+      }
+    });
+
+    function highlightVirtualKey(key) {
+      let selector = `.key[data-key="${key}"]`;
+      if (key === " ") selector = `.key[data-key=" "]`;
+      if (key === "Backspace") selector = `.key[data-key="Backspace"]`;
+
+      const keyEl = document.querySelector(selector) || document.querySelector(`.key[data-key="${key.toLowerCase()}"]`);
+      if (keyEl) {
+        keyEl.classList.add("active");
+        setTimeout(() => keyEl.classList.remove("active"), 150);
+      }
+    }
+
+    function updateStats() {
+      xpEl.textContent = xp;
+      streakEl.textContent = streak;
+    }
+
+    function checkTreatUnlocks() {
+      const progress = ((currentIndex + 1) / sentences.length) * 100;
+      if (progress >= 25) document.getElementById("treat-1").classList.add("unlocked");
+      if (progress >= 50) document.getElementById("treat-2").classList.add("unlocked");
+      if (progress >= 75) document.getElementById("treat-3").classList.add("unlocked");
+      if (progress >= 100) document.getElementById("treat-4").classList.add("unlocked");
+    }
+
+    function finishGame() {
+      progressBar.style.width = "100%";
+      document.getElementById("final-stats").textContent = `Total XP Earned: ${xp}`;
+      document.getElementById("completion-modal").style.display = "flex";
+    }
+
+    function restartApp() {
+      currentIndex = 0;
+      xp = 0;
+      streak = 0;
+      updateStats();
+      document.querySelectorAll(".treat-badge").forEach(b => b.classList.remove("unlocked"));
+      document.getElementById("completion-modal").style.display = "none";
+      initSentence();
+    }
+
+    initSentence();
+  </script>
+</body>
+</html>
